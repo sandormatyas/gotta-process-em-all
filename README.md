@@ -1,22 +1,23 @@
 # gotta-process-em-all
 
-This repository contains code and notes for pulling, and processing data form the PokéAPI.
+This repository contains resources for a case study. There is code and notes for pulling, and processing data form the PokéAPI.
 
 ## Scope for the tasks
 
 Pokémon that appear in `red`, `blue`, `leafgreen` or `white` are in scope.
 
-The following data is required:
+The following fields are required:
 - id
-- name
+- name (titlecase)
 - height
 - weight
 - base_experience
 - order
+- default_front sprite
+- bmi (needs to be calculated)
 
 
 ## Pull data about Pokémon from specific games
-
 
 After looking at the documentation for the API, I concluded that, unfortunately, it is not possible to fetch all Pokémon in a given game with a specific endpoint or query parameter or anything similar. I came up with the following approaches:
 
@@ -33,3 +34,18 @@ After experimenting with approaches 1 and 3 I was able to fetch 667 Pokémon in 
 ## Processing the data
 
 There is an issue with the sprites in the Graph API. See https://github.com/PokeAPI/pokeapi/issues/614#issuecomment-1422636938
+
+I decided to flatten the data and store records as json objects.
+
+I dumped all records in to a json file named `pokemon_processed.json`. The data could be sorted into multiple files of course, but I think this depends on the use case. Depending on the purpose or the database they could be saved as independent json files, in batch by games. 
+
+If the data is expected to be updated it should be considered as a factor in separating the records into files. If all the data is dumped into 1 file it represents the "state" of the Pokémon data in scope. This can be versioned and updated or just overwritten as needed. If the data is separated into files additional logic may be required to determine what files need to be updated to avoid unnecessary operations.
+
+## Bonus Requirements
+### Pseudonymize Pokémon data
+
+First let's identify the fields that make the data indentifiable. One could argue that if the attributes like weight or height are static, then the combination of the fields could always be used to indenfy a Pokémon. For the sake of this excercise let's put this argument aside and treat Pokémon as they were individuals where their attributes are not traceable.
+
+Fields with identifiable data in my opinion are: id, name and default_front_sprite. The latter because it contains the id.
+
+I chose to apply symmetric encryption (Fernet) on the fields with identifiable data. I implemented a function for encrypting relevant fields and one for decrypting them.
