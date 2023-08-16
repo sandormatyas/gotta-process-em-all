@@ -1,5 +1,7 @@
 import requests
 import json
+from cryptography.fernet import Fernet
+from os import getenv
 
 POKE_REST_API_BASE_URL = "https://pokeapi.co/api/v2/"
 POKE_GRAPHQL_BASE_URL = "https://beta.pokeapi.co/graphql/v1beta"
@@ -108,7 +110,7 @@ def process_pokemon_data(pokemon_data: list) -> list[dict]:
             pokemon["pokemon_v2_pokemonsprites"].pop()["sprites"])
         processed = {
             "id": pokemon["id"],
-            "name": pokemon["name"],
+            "name": pokemon["name"].title(),
             "height": pokemon["height"],
             "weight": pokemon["weight"],
             "base_experience": pokemon["base_experience"],
@@ -119,6 +121,47 @@ def process_pokemon_data(pokemon_data: list) -> list[dict]:
         }
         processed_pokemon.append(processed)
     return processed_pokemon
+
+
+def encrypt_pii(pokemon_data: list[dict]) -> list[dict]:
+    key = getenv("FERNET_KEY")
+    if not key:
+        key = Fernet.generate_key()
+        with open(".env", "+a") as envfile:
+            envfile.write(f"FERNET_KEY={str(key, encoding='utf-8')}")
+    else:
+        # If key is in env, needs to be cast to bytes
+        key = bytes(key, encoding="utf-8")
+
+    f = Fernet(key)
+
+    for pokemon in pokemon_data:
+        pokemon["id"] = str(
+            f.encrypt(bytes(str(pokemon["id"]), encoding="utf-8")), encoding="utf-8")
+        pokemon["name"] = str(
+            f.encrypt(bytes(pokemon["name"], encoding="utf-8")), encoding="utf-8")
+        pokemon["default_front_sprite"] = str(
+            f.encrypt(bytes(pokemon["default_front_sprite"], encoding="utf-8")), encoding="utf-8")
+    return pokemon_data
+
+
+def decrypt_pii(pseudonymised_data: list[dict], fernet_key: bytes | None = None) -> list[dict]:
+    if not fernet_key:
+        key = getenv("FERNET_KEY")
+        if not key:
+            raise ValueError("Missing argument `fernet_key`.")
+        else:
+            key = bytes(key, encoding="utf-8")
+
+    f = Fernet(key)
+
+    for pokemon in pseudonymised_data:
+        pokemon["id"] = int(f.decrypt(bytes(pokemon["id"], encoding="utf-8")))
+        pokemon["name"] = str(
+            f.decrypt(bytes(pokemon["name"], encoding="utf-8")), encoding="utf-8")
+        pokemon["default_front_sprite"] = str(f.decrypt(
+            bytes(pokemon["default_front_sprite"], encoding="utf-8")), encoding="utf-8")
+    return pseudonymised_data
 
 
 if __name__ == "__main__":
@@ -133,5 +176,15 @@ if __name__ == "__main__":
         file.write(json.dumps(pokemon_3, indent=2))
 
     processed_pokemon = process_pokemon_data(pokemon_3)
-    with open("pokemon_gql_processed.json", "w") as file:
+    with open("pokemon_processed.json", "w") as file:
         file.write(json.dumps(processed_pokemon, indent=2))
+
+    pseudonymised_data = encrypt_pii(processed_pokemon.copy())
+    with open("pokemon_pseudonymised.json", "w") as file:
+        file.write(json.dumps(pseudonymised_data, indent=2))
+
+    identifiable_data = decrypt_pii(pseudonymised_data)
+    with open("pokemon_de_pseudonymised.json", "w") as file:
+        file.write(json.dumps(identifiable_data, indent=2))
+    print(
+        f"Data match after de-pseudonymisation: {identifiable_data == processed_pokemon}")
