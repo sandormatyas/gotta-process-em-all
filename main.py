@@ -122,7 +122,7 @@ def process_pokemon_data(pokemon_data: list) -> list[dict]:
             "order": pokemon["order"],
             "type": [_type["pokemon_v2_type"]["name"] for _type in pokemon["pokemon_v2_pokemontypes"]],
             "bmi": bmi,
-            "default_front_sprite": sprites["front_default"].replace("/media", SPRITE_BASE_URL),
+            "front_default_sprite": sprites["front_default"].replace("/media", SPRITE_BASE_URL),
         }
         processed_pokemon.append(processed)
     return processed_pokemon
@@ -146,8 +146,8 @@ def encrypt_pii(pokemon_data: list[dict]) -> list[dict]:
             f.encrypt(bytes(str(pokemon["id"]), encoding="utf-8")), encoding="utf-8")
         pokemon["name"] = str(
             f.encrypt(bytes(pokemon["name"], encoding="utf-8")), encoding="utf-8")
-        pokemon["default_front_sprite"] = str(
-            f.encrypt(bytes(pokemon["default_front_sprite"], encoding="utf-8")), encoding="utf-8")
+        pokemon["front_default_sprite"] = str(
+            f.encrypt(bytes(pokemon["front_default_sprite"], encoding="utf-8")), encoding="utf-8")
     return data
 
 
@@ -170,8 +170,8 @@ def decrypt_pii(encrypted_data: list[dict], fernet_key: bytes | None = None) -> 
             pokemon_name = get_encrypted_name_by_psuedonym(pokemon["name"])
         pokemon["name"] = str(
             f.decrypt(bytes(pokemon_name, encoding="utf-8")), encoding="utf-8")
-        pokemon["default_front_sprite"] = str(f.decrypt(
-            bytes(pokemon["default_front_sprite"], encoding="utf-8")), encoding="utf-8")
+        pokemon["front_default_sprite"] = str(f.decrypt(
+            bytes(pokemon["front_default_sprite"], encoding="utf-8")), encoding="utf-8")
     return data
 
 
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 
     processed_pokemon = process_pokemon_data(pokemon_3)
     with open("pokemon_processed.json", "w") as file:
-        file.write(json.dumps(processed_pokemon, indent=2))
+        file.write(json.dumps(processed_pokemon))
 
     encrypted_data = encrypt_pii(processed_pokemon)
     with open("pokemon_encrypted.json", "w") as file:
