@@ -49,3 +49,13 @@ First let's identify the fields that make the data indentifiable. One could argu
 Fields with identifiable data in my opinion are: id, name and default_front_sprite. The latter because it contains the id.
 
 I chose to apply symmetric encryption (Fernet) on the fields with identifiable data. I implemented a function for encrypting relevant fields and one for decrypting them.
+
+Additionally the fields that idenfy the record (only within the data set) became very long now and they are not friendly for human eyes. This could become an issue if the use for the data is to produce a human readable report or study and records become hard to track.
+
+To work around this I use Faker, a python library for fake data generation to generate human readable pseudonyms for the Pokémon. I store the mappings in a file, but this is not sensitive as it is just a mapping between the pseudonym and the encrypted value.
+
+To see if the output of the decryption function is correct I put in print statements that compare the two lists, and also used `diff` which showed that the processed data matched the decrypted data.
+
+### Continuous updates to investors
+
+TODO

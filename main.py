@@ -1,7 +1,10 @@
 import requests
 import json
+import re
 from cryptography.fernet import Fernet
 from os import getenv
+from faker import Faker
+from copy import deepcopy
 
 POKE_REST_API_BASE_URL = "https://pokeapi.co/api/v2/"
 POKE_GRAPHQL_BASE_URL = "https://beta.pokeapi.co/graphql/v1beta"
@@ -10,6 +13,8 @@ SPRITE_BASE_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master"
 TARGETED_GAMES = ["red", "blue", "leafgreen", "white"]
 HEIGHT_MULTIPLIER = 0.1
 WEIGHT_MULTIPLIER = 0.1
+fake = Faker()
+Faker.seed(1234)
 
 
 def get_all_pokemon_filter_by_game(page_size: int = 100, game_names: list = []) -> list[dict]:
@@ -124,6 +129,7 @@ def process_pokemon_data(pokemon_data: list) -> list[dict]:
 
 
 def encrypt_pii(pokemon_data: list[dict]) -> list[dict]:
+    data = deepcopy(pokemon_data)
     key = getenv("FERNET_KEY")
     if not key:
         key = Fernet.generate_key()
@@ -135,17 +141,18 @@ def encrypt_pii(pokemon_data: list[dict]) -> list[dict]:
 
     f = Fernet(key)
 
-    for pokemon in pokemon_data:
+    for pokemon in data:
         pokemon["id"] = str(
             f.encrypt(bytes(str(pokemon["id"]), encoding="utf-8")), encoding="utf-8")
         pokemon["name"] = str(
             f.encrypt(bytes(pokemon["name"], encoding="utf-8")), encoding="utf-8")
         pokemon["default_front_sprite"] = str(
             f.encrypt(bytes(pokemon["default_front_sprite"], encoding="utf-8")), encoding="utf-8")
-    return pokemon_data
+    return data
 
 
-def decrypt_pii(pseudonymised_data: list[dict], fernet_key: bytes | None = None) -> list[dict]:
+def decrypt_pii(encrypted_data: list[dict], fernet_key: bytes | None = None) -> list[dict]:
+    data = deepcopy(encrypted_data)
     if not fernet_key:
         key = getenv("FERNET_KEY")
         if not key:
@@ -154,14 +161,41 @@ def decrypt_pii(pseudonymised_data: list[dict], fernet_key: bytes | None = None)
             key = bytes(key, encoding="utf-8")
 
     f = Fernet(key)
+    human_readable_re_pattern = r"Pocket Monster [0-9]{6}"
 
-    for pokemon in pseudonymised_data:
+    for pokemon in data:
         pokemon["id"] = int(f.decrypt(bytes(pokemon["id"], encoding="utf-8")))
+        pokemon_name = pokemon["name"]
+        if re.match(human_readable_re_pattern, pokemon_name):
+            pokemon_name = get_encrypted_name_by_psuedonym(pokemon["name"])
         pokemon["name"] = str(
-            f.decrypt(bytes(pokemon["name"], encoding="utf-8")), encoding="utf-8")
+            f.decrypt(bytes(pokemon_name, encoding="utf-8")), encoding="utf-8")
         pokemon["default_front_sprite"] = str(f.decrypt(
             bytes(pokemon["default_front_sprite"], encoding="utf-8")), encoding="utf-8")
-    return pseudonymised_data
+    return data
+
+
+def make_names_human_readable(encrypted_data: list) -> list[dict]:
+    data = deepcopy(encrypted_data)
+    name_lookup = {}
+    for pokemon in data:
+        while True:
+            name = fake.numerify(text="Pocket Monster ######")
+            if name not in name_lookup:
+                break
+        name_lookup[name] = pokemon["name"]
+        pokemon["name"] = name
+
+    with open("pseudonym_name_lookup.json", "w") as file:
+        file.write(json.dumps(name_lookup))
+
+    return data
+
+
+def get_encrypted_name_by_psuedonym(hr_name: str) -> str:
+    with open("pseudonym_name_lookup.json", "r") as lookup_file:
+        name_lookup = json.loads(lookup_file.read())
+        return name_lookup.get(hr_name)
 
 
 if __name__ == "__main__":
@@ -179,12 +213,22 @@ if __name__ == "__main__":
     with open("pokemon_processed.json", "w") as file:
         file.write(json.dumps(processed_pokemon, indent=2))
 
-    pseudonymised_data = encrypt_pii(processed_pokemon.copy())
-    with open("pokemon_pseudonymised.json", "w") as file:
-        file.write(json.dumps(pseudonymised_data, indent=2))
+    encrypted_data = encrypt_pii(processed_pokemon)
+    with open("pokemon_encrypted.json", "w") as file:
+        file.write(json.dumps(encrypted_data, indent=2))
 
-    identifiable_data = decrypt_pii(pseudonymised_data)
-    with open("pokemon_de_pseudonymised.json", "w") as file:
-        file.write(json.dumps(identifiable_data, indent=2))
+    decrypted_data = decrypt_pii(encrypted_data)
+    with open("pokemon_decrypted.json", "w") as file:
+        file.write(json.dumps(decrypted_data, indent=2))
     print(
-        f"Data match after de-pseudonymisation: {identifiable_data == processed_pokemon}")
+        f"Data match after decryption: {decrypted_data == processed_pokemon}")
+
+    pseudonym_data = make_names_human_readable(encrypted_data)
+    with open("pokemon_pseudonymised.json", "w") as file:
+        file.write(json.dumps(pseudonym_data, indent=2))
+
+    pseudonym_data_decrypted = decrypt_pii(pseudonym_data)
+    with open("pokemon_de_pseudonymised.json", "w") as file:
+        file.write(json.dumps(pseudonym_data_decrypted, indent=2))
+    print(
+        f"HR Data match after de-pseudonymisation: {processed_pokemon == pseudonym_data_decrypted}")
