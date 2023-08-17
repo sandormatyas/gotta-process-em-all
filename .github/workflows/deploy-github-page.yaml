@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "poke-dash/build/**"
+  workflow_dispatch:
 
 permissions:
   pages: write
