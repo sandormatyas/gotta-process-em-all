@@ -1,0 +1,38 @@
+name: "Deploy dashboard"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "poke-dash/build/**"
+
+permissions:
+  pages: write
+  id-token: write
+
+jobs:
+  deploy-github-page:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3
+
+      - name: Setup Node
+        uses: actions/setup-node@master
+
+      - name: Build react webapp
+        run: |
+          cd poke-dash
+          npm install
+          npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: "poke-dash/build/"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
