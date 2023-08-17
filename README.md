@@ -113,6 +113,8 @@ To build a system that releases updates about Pokémon to investors I came up wi
 
 ### Dashboard
 
+I put together a very simple dashboard in my favorite front-end framework, React. Find it deployed here: https://sandormatyas.github.io/gotta-process-em-all/
+
 ### Spark compability
 
 Python and the json format the processed data is stored in should be both Spark compatible.
