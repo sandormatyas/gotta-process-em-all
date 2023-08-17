@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "poke-dash/build/**"
+      - "poke-dash/**"
   workflow_dispatch:
 
 permissions:
