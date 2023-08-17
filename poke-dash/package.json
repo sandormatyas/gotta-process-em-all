@@ -2,6 +2,7 @@
   "name": "poke-dash",
   "version": "0.1.0",
   "homepage": "https://sandormatyas.github.io/gotta-process-em-all/",
+  "proxy": "http://localhost:3000",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.11.1",
@@ -15,7 +16,11 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
+    "recharts": "^2.7.3",
     "web-vitals": "^2.1.4"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
   },
   "scripts": {
     "start": "react-scripts start",
