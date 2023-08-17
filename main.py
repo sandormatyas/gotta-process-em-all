@@ -202,7 +202,7 @@ if __name__ == "__main__":
     # Inefficient and takes too long (commented out so it will not run)
     # pokemon_1 = get_all_pokemon_filter_by_game(game_names=TARGETED_GAMES)
     # with open("pokemon_restapi_raw.json", "w") as file:
-    #     file.write(json.dumps(pokemon_1, indent=2))
+    #     file.write(json.dumps(pokemon_1))
 
     # Efficient, only relevant details
     pokemon_3 = get_pokemon_in_scope()
