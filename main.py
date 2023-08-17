@@ -186,14 +186,14 @@ def make_names_human_readable(encrypted_data: list) -> list[dict]:
         name_lookup[name] = pokemon["name"]
         pokemon["name"] = name
 
-    with open("pseudonym_name_lookup.json", "w") as file:
+    with open("data/pseudonym_name_lookup.json", "w") as file:
         file.write(json.dumps(name_lookup))
 
     return data
 
 
 def get_encrypted_name_by_psuedonym(hr_name: str) -> str:
-    with open("pseudonym_name_lookup.json", "r") as lookup_file:
+    with open("data/pseudonym_name_lookup.json", "r") as lookup_file:
         name_lookup = json.loads(lookup_file.read())
         return name_lookup.get(hr_name)
 
@@ -201,34 +201,34 @@ def get_encrypted_name_by_psuedonym(hr_name: str) -> str:
 if __name__ == "__main__":
     # Inefficient and takes too long (commented out so it will not run)
     # pokemon_1 = get_all_pokemon_filter_by_game(game_names=TARGETED_GAMES)
-    # with open("pokemon_restapi_raw.json", "w") as file:
+    # with open("data/pokemon_restapi_raw.json", "w") as file:
     #     file.write(json.dumps(pokemon_1))
 
     # Efficient, only relevant details
     pokemon_3 = get_pokemon_in_scope()
-    with open("pokemon_gql_raw.json", "w") as file:
+    with open("data/pokemon_gql_raw.json", "w") as file:
         file.write(json.dumps(pokemon_3, indent=2))
 
     processed_pokemon = process_pokemon_data(pokemon_3)
-    with open("pokemon_processed.json", "w") as file:
+    with open("data/pokemon_processed.json", "w") as file:
         file.write(json.dumps(processed_pokemon))
 
     encrypted_data = encrypt_pii(processed_pokemon)
-    with open("pokemon_encrypted.json", "w") as file:
+    with open("data/pokemon_encrypted.json", "w") as file:
         file.write(json.dumps(encrypted_data, indent=2))
 
     decrypted_data = decrypt_pii(encrypted_data)
-    with open("pokemon_decrypted.json", "w") as file:
+    with open("data/pokemon_decrypted.json", "w") as file:
         file.write(json.dumps(decrypted_data, indent=2))
     print(
         f"Data match after decryption: {decrypted_data == processed_pokemon}")
 
     pseudonym_data = make_names_human_readable(encrypted_data)
-    with open("pokemon_pseudonymised.json", "w") as file:
+    with open("data/pokemon_pseudonymised.json", "w") as file:
         file.write(json.dumps(pseudonym_data, indent=2))
 
     pseudonym_data_decrypted = decrypt_pii(pseudonym_data)
-    with open("pokemon_de_pseudonymised.json", "w") as file:
+    with open("data/pokemon_de_pseudonymised.json", "w") as file:
         file.write(json.dumps(pseudonym_data_decrypted, indent=2))
     print(
         f"HR Data match after de-pseudonymisation: {processed_pokemon == pseudonym_data_decrypted}")

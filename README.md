@@ -109,7 +109,7 @@ To see if the output of the decryption function is correct I put in print statem
 
 To build a system that releases updates about Pokémon to investors I came up with the following arcitecture in AWS. I wasn't sure if the updates to provide are the raw data or a diff-like message about the changes like "Charizard: height: 17 > 18", but the architecture should work in multiple interpretations with some tweaks.
 
-<img src="investor_update_arch.svg">
+<img src="docs/investor_update_arch.svg">
 
 ### Dashboard
 
