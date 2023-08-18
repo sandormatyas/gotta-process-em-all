@@ -185,6 +185,8 @@ def make_names_human_readable(encrypted_data: list) -> list[dict]:
                 break
         name_lookup[name] = pokemon["name"]
         pokemon["name"] = name
+        del pokemon["id"]
+        del pokemon["front_default_sprite"]
 
     with open("data/pseudonym_name_lookup.json", "w") as file:
         file.write(json.dumps(name_lookup))
@@ -226,9 +228,3 @@ if __name__ == "__main__":
     pseudonym_data = make_names_human_readable(encrypted_data)
     with open("data/pokemon_pseudonymised.json", "w") as file:
         file.write(json.dumps(pseudonym_data, indent=2))
-
-    pseudonym_data_decrypted = decrypt_pii(pseudonym_data)
-    with open("data/pokemon_de_pseudonymised.json", "w") as file:
-        file.write(json.dumps(pseudonym_data_decrypted, indent=2))
-    print(
-        f"HR Data match after de-pseudonymisation: {processed_pokemon == pseudonym_data_decrypted}")

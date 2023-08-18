@@ -120,7 +120,7 @@ I put together a very simple dashboard in my favorite front-end framework, React
 Python and the json format the processed data is stored in should be both Spark compatible.
 
 ```sh
->>> df = spark.read.json("pokemon_processed.json")
+>>> df = spark.read.json("data/pokemon_processed.json")
 >>> df.show()
 +---------------+-----+--------------------+------+---+----------+-----+----------------+------+
 |base_experience|  bmi|default_front_sprite|height| id|      name|order|            type|weight|
